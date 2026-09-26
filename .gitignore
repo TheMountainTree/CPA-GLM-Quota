@@ -1,0 +1,19 @@
+# Binaries & Shared Libraries
+*.so
+*.dylib
+*.dll
+*.h
+*.exe
+
+# Test data & temporary files
+testdata/
+*.tmp
+*.log
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~

@@ -1,0 +1,85 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Plugin (.so)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            target: linux_amd64
+          - arch: arm64
+            target: linux_arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Install cross-compilation toolchain
+        if: matrix.arch == 'arm64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build plugin (amd64)
+        if: matrix.arch == 'amd64'
+        run: |
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
+          go build -trimpath -buildmode=c-shared -o glm-quota-linux-amd64.so .
+
+      - name: Build plugin (arm64)
+        if: matrix.arch == 'arm64'
+        run: |
+          CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc GOOS=linux GOARCH=arm64 \
+          go build -trimpath -buildmode=c-shared -o glm-quota-linux-arm64.so .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: glm-quota-${{ matrix.target }}
+          path: glm-quota-${{ matrix.target }}.so
+
+  release:
+    name: Publish Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-dist
+          cp artifacts/glm-quota-linux_amd64/glm-quota-linux-amd64.so release-dist/glm-quota.so
+          cp artifacts/glm-quota-linux_amd64/glm-quota-linux-amd64.so release-dist/
+          cp artifacts/glm-quota-linux_arm64/glm-quota-linux-arm64.so release-dist/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
