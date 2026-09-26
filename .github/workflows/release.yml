@@ -19,9 +19,9 @@ jobs:
       matrix:
         include:
           - arch: amd64
-            target: linux_amd64
+            target: linux-amd64
           - arch: arm64
-            target: linux_arm64
+            target: linux-arm64
 
     steps:
       - name: Checkout repository
@@ -73,9 +73,9 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release-dist
-          cp artifacts/glm-quota-linux_amd64/glm-quota-linux-amd64.so release-dist/glm-quota.so
-          cp artifacts/glm-quota-linux_amd64/glm-quota-linux-amd64.so release-dist/
-          cp artifacts/glm-quota-linux_arm64/glm-quota-linux-arm64.so release-dist/
+          cp artifacts/glm-quota-linux-amd64/glm-quota-linux-amd64.so release-dist/glm-quota.so
+          cp artifacts/glm-quota-linux-amd64/glm-quota-linux-amd64.so release-dist/
+          cp artifacts/glm-quota-linux-arm64/glm-quota-linux-arm64.so release-dist/
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
